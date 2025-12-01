@@ -3,6 +3,31 @@ set -eo pipefail
 
 echo "---> Kubectl Buildpack"
 
+# Detect target architecture
+# CNB_TARGET_ARCH is set by Cloud Native Buildpacks, fallback to uname -m
+if [[ -n "${CNB_TARGET_ARCH:-}" ]]; then
+  target_arch="$CNB_TARGET_ARCH"
+elif [[ -n "${TARGETARCH:-}" ]]; then
+  target_arch="$TARGETARCH"
+else
+  # Detect from system
+  uname_arch=$(uname -m)
+  case "$uname_arch" in
+    x86_64)
+      target_arch="amd64"
+      ;;
+    aarch64|arm64)
+      target_arch="arm64"
+      ;;
+    *)
+      echo " !     kubectl: Unsupported architecture: $uname_arch"
+      exit 1
+      ;;
+  esac
+fi
+
+echo "       kubectl: Detected target architecture: $target_arch"
+
 BP_DIR=$(cd $(dirname ${0:-}); cd ..; pwd)
 
 HOME_DIR=$(pwd)
@@ -11,9 +36,26 @@ mkdir -p $TARGET_DIR
 
 PROFILE_DIR=$HOME_DIR/.profile.d/
 
-cd $TARGET_DIR && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl";
+# Download kubectl for the detected architecture
+KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+KUBECTL_URL="https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${target_arch}/kubectl"
+
+echo "       kubectl: Downloading kubectl ${KUBECTL_VERSION} for ${target_arch}"
+cd $TARGET_DIR && curl -LO "$KUBECTL_URL" || {
+  echo " !     kubectl: Failed to download kubectl for ${target_arch}"
+  exit 1
+}
+
 chmod +x $TARGET_DIR/kubectl
+
+# Verify kubectl works
+$TARGET_DIR/kubectl version --client --short || {
+  echo " !     kubectl: Binary verification failed"
+  exit 1
+}
 
 mkdir -p $PROFILE_DIR
 cp $BP_DIR/profile/kubectl.sh $PROFILE_DIR
 cat $BP_DIR/profile/kubectl.sh >> $HOME_DIR/.bashrc
+
+echo "       kubectl: Successfully installed kubectl ${KUBECTL_VERSION} for ${target_arch}"
