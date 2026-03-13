@@ -70,7 +70,7 @@ fi
 # Expose kubectl on PATH at launch time.
 # Prefer CNB env contract; keep profile.d as a fallback for older launchers.
 mkdir -p "$KUBECTL_LAYER_DIR/env.launch"
-printf '%s' "$KUBECTL_LAYER_DIR/bin" > "$KUBECTL_LAYER_DIR/env.launch/PATH.prepend"
+echo "$KUBECTL_LAYER_DIR/bin" > "$KUBECTL_LAYER_DIR/env.launch/PATH.prepend"
 
 mkdir -p "$KUBECTL_LAYER_DIR/profile.d"
 cp "$BP_DIR/profile/kubectl.sh" "$KUBECTL_LAYER_DIR/profile.d/kubectl.sh"
@@ -88,12 +88,3 @@ architecture = "${target_arch}"
 version = "${KUBECTL_VERSION}"
 source = "${KUBECTL_URL}"
 EOF
-
-# Create backward-compatible symlink for existing PATH expectations.
-# The old path was /workspace/.kubectl_install, so we symlink to the bin directory.
-APP_DIR="${CNB_APP_DIR:-/workspace}"
-if [ -n "$APP_DIR" ] && [ ! -e "$APP_DIR/.kubectl_install" ]; then
-  mkdir -p "$APP_DIR"
-  ln -s "$KUBECTL_LAYER_DIR/bin" "$APP_DIR/.kubectl_install"
-  echo "       kubectl: Created backward-compatible symlink at $APP_DIR/.kubectl_install"
-fi

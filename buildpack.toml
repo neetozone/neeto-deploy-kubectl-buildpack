@@ -1,8 +1,19 @@
 api = "0.7"
 
 [buildpack]
-  id = "neeto-deploy/kubectl"
-  version = "0.0.2"
+id = "neeto-deploy/kubectl"
+version = "0.0.6"
+name = "NeetoDeploy Kubectl Buildpack"
+description = "A Cloud Native Buildpack that installs kubectl for Kubernetes operations"
+
+[metadata]
+include-files = [
+  "bin/build",
+  "bin/detect",
+  "bin/release",
+  "profile/kubectl.sh",
+  "buildpack.toml",
+]
 
 [[stacks]]
-  id = "heroku-22"
+id = "heroku-22"
