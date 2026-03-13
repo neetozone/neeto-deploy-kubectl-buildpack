@@ -1,0 +1,21 @@
+api = "0.10"
+
+[buildpack]
+  description = "A Cloud Native Buildpack that installs kubectl for Kubernetes operations"
+  id = "neeto-deploy/kubectl"
+  name = "NeetoDeploy Kubectl Buildpack"
+  version = "0.0.5"
+
+[metadata]
+  include-files = ["bin/build", "bin/detect", "bin/release", "profile/kubectl.sh", "buildpack.toml"]
+
+[[stacks]]
+  id = "*"
+
+[[targets]]
+  arch = "amd64"
+  os = "linux"
+
+[[targets]]
+  arch = "arm64"
+  os = "linux"
